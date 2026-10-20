@@ -2,11 +2,21 @@ import React from 'react'
 
 function BmrCalc({ formData }) {
   const calculateBMR = () => {
-    const { age, gender, weight, height } = formData
-    if (!age || !weight || !height) return null
+    const { age, gender, weight, height, heightFeet, heightInches, unitSystem } = formData
 
-    const weightKg = parseFloat(weight)
-    const heightCm = parseFloat(height)
+    if (!age || !weight) return null
+
+    let weightKg = unitSystem === 'imperial' ? parseFloat(weight) / 2.20462 : parseFloat(weight)
+    let heightCm
+
+    if (unitSystem === 'imperial') {
+      if (!heightFeet || !heightInches) return null
+      heightCm = (parseFloat(heightFeet) * 30.48) + (parseFloat(heightInches) * 2.54)
+    } else {
+      if (!height) return null
+      heightCm = parseFloat(height)
+    }
+
     const ageNum = parseFloat(age)
 
     let bmr
@@ -42,12 +52,12 @@ function BmrCalc({ formData }) {
         <div className="space-y-4">
           <div>
             <p className="text-xs text-neutral-500 mb-1">Basal Metabolic Rate (BMR)</p>
-            <p className="text-3xl font-bold text-neutral-100">{bmr} <span className="text-lg font-normal text-neutral-400">kcal/day</span></p>
+            <p className="text-3xl font-bold text-neutral-100" data-bmr={bmr}>{bmr} <span className="text-lg font-normal text-neutral-400">kcal/day</span></p>
             <p className="text-xs text-neutral-500 mt-1">Mifflin-St Jeor equation</p>
           </div>
           <div className="border-t border-neutral-700 pt-4">
             <p className="text-xs text-neutral-500 mb-1">Total Daily Energy (TDEE)</p>
-            <p className="text-3xl font-bold text-neutral-100">{tdee} <span className="text-lg font-normal text-neutral-400">kcal/day</span></p>
+            <p className="text-3xl font-bold text-neutral-100" data-tdee={tdee}>{tdee} <span className="text-lg font-normal text-neutral-400">kcal/day</span></p>
             <p className="text-xs text-neutral-500 mt-1">Based on activity level</p>
           </div>
         </div>

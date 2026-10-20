@@ -2,10 +2,10 @@ import React from 'react'
 
 function ProteinCalc({ formData }) {
   const calculateProtein = () => {
-    const { weight, activityLevel } = formData
+    const { weight, activityLevel, unitSystem } = formData
     if (!weight) return null
 
-    const weightKg = parseFloat(weight)
+    const weightKg = unitSystem === 'imperial' ? parseFloat(weight) / 2.20462 : parseFloat(weight)
 
     const proteinMultipliers = {
       sedentary: 0.8,
@@ -29,7 +29,7 @@ function ProteinCalc({ formData }) {
       {protein ? (
         <div>
           <p className="text-xs text-neutral-500 mb-1">Daily Protein Intake</p>
-          <p className="text-3xl font-bold text-neutral-100">{protein} <span className="text-lg font-normal text-neutral-400">g/day</span></p>
+          <p className="text-3xl font-bold text-neutral-100" data-protein={protein}>{protein} <span className="text-lg font-normal text-neutral-400">g/day</span></p>
           <p className="text-xs text-neutral-500 mt-1">Based on activity level</p>
         </div>
       ) : (
