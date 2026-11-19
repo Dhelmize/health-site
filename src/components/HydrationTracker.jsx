@@ -1,156 +1,51 @@
-import React, { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { mlToOz } from '../utils/conversion'
 
 function HydrationTracker({ formData }) {
   const [hydrationLog, setHydrationLog] = useState(() => {
-    const saved = localStorage.getItem('hydration-log')
-    return saved ? JSON.parse(saved) : []
-  })
-
-  const [todayLog, setTodayLog] = useState(() => {
-    const today = new Date().toDateString()
-    const saved = localStorage.getItem('hydration-log')
-    if (saved) {
-      const log = JSON.parse(saved)
-      return log.filter(entry => new Date(entry.timestamp).toDateString() === today)
+    try {
+      const saved = localStorage.getItem('hydration-log')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
     }
-    return []
   })
+  const [today] = useState(() => new Date().toDateString())
+  const todayLog = hydrationLog.filter(entry => new Date(entry.timestamp).toDateString() === today)
 
   useEffect(() => {
     localStorage.setItem('hydration-log', JSON.stringify(hydrationLog))
   }, [hydrationLog])
 
-  const calculateDailyGoal = () => {
-    const { weight, workoutToday, unitSystem } = formData
-    if (!weight) return null
+  const weight = parseFloat(formData.weight)
+  const weightKg = formData.unitSystem === 'imperial' ? weight / 2.20462 : weight
+  const goal = weightKg ? Math.round((weightKg * 35) + (formData.workoutToday ? 750 : 0)) : null
+  const intake = todayLog.reduce((sum, entry) => sum + entry.amount, 0)
+  const progress = goal ? Math.min((intake / goal) * 100, 100) : 0
+  const imperial = formData.unitSystem === 'imperial'
+  const display = amount => imperial ? `${Math.round(mlToOz(amount))} oz` : `${amount} ml`
 
-    const weightKg = unitSystem === 'imperial' ? parseFloat(weight) / 2.20462 : parseFloat(weight)
-    let water = weightKg * 35
-
-    if (workoutToday) {
-      water += 750
-    }
-
-    return Math.round(water)
-  }
-
-  const dailyGoal = calculateDailyGoal()
-  const totalIntake = todayLog.reduce((sum, entry) => sum + entry.amount, 0)
-  const progress = dailyGoal ? Math.min((totalIntake / dailyGoal) * 100, 100) : 0
-
-  const addWater = (amount) => {
-    const entry = {
-      id: Date.now(),
-      amount,
-      timestamp: new Date().toISOString()
-    }
-    setHydrationLog(prev => [...prev, entry])
-    setTodayLog(prev => [...prev, entry])
-  }
-
-  const removeEntry = (id) => {
-    setHydrationLog(prev => prev.filter(entry => entry.id !== id))
-    setTodayLog(prev => prev.filter(entry => entry.id !== id))
-  }
-
-  const clearToday = () => {
+  const add = amount => setHydrationLog(previous => [...previous, { id: Date.now(), amount, timestamp: new Date().toISOString() }])
+  const remove = id => setHydrationLog(previous => previous.filter(entry => entry.id !== id))
+  const clear = () => {
     const today = new Date().toDateString()
-    setHydrationLog(prev => prev.filter(entry => new Date(entry.timestamp).toDateString() !== today))
-    setTodayLog([])
+    setHydrationLog(previous => previous.filter(entry => new Date(entry.timestamp).toDateString() !== today))
   }
 
-  const isImperial = formData.unitSystem === 'imperial'
+  if (!goal) return <div className="empty-state"><h2>Set a hydration goal</h2><p>Enter your weight in a calculator or profile.</p></div>
 
   return (
-    <div className="bg-neutral-900 border border-neutral-700 p-6 rounded-xl hover:border-neutral-600 transition-all">
-      <h3 className="text-sm font-semibold text-neutral-400 mb-4 uppercase tracking-wide">
-        Hydration Tracker
-      </h3>
-
-      {dailyGoal ? (
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-xs text-neutral-500">Daily Goal</p>
-              <p className="text-lg font-bold text-neutral-100">
-                {isImperial ? Math.round(mlToOz(dailyGoal)) : dailyGoal} {isImperial ? 'oz' : 'ml'}
-              </p>
-            </div>
-
-            <div className="w-full bg-neutral-800 rounded-full h-3 mb-2">
-              <div
-                className="bg-blue-500 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <div className="flex justify-between items-center">
-              <p className="text-xs text-neutral-500">Consumed</p>
-              <p className="text-sm font-medium text-neutral-100">
-                {isImperial ? Math.round(mlToOz(totalIntake)) : totalIntake} {isImperial ? 'oz' : 'ml'} ({Math.round(progress)}%)
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => addWater(250)}
-              className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-400 hover:text-neutral-100 hover:border-neutral-600 transition-all"
-            >
-              +{isImperial ? Math.round(mlToOz(250)) : 250} {isImperial ? 'oz' : 'ml'}
-            </button>
-            <button
-              onClick={() => addWater(500)}
-              className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-400 hover:text-neutral-100 hover:border-neutral-600 transition-all"
-            >
-              +{isImperial ? Math.round(mlToOz(500)) : 500} {isImperial ? 'oz' : 'ml'}
-            </button>
-            <button
-              onClick={() => addWater(750)}
-              className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-400 hover:text-neutral-100 hover:border-neutral-600 transition-all"
-            >
-              +{isImperial ? Math.round(mlToOz(750)) : 750} {isImperial ? 'oz' : 'ml'}
-            </button>
-          </div>
-
-          {todayLog.length > 0 && (
-            <div className="border-t border-neutral-700 pt-3">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-xs text-neutral-500">Today's Log</p>
-                <button
-                  onClick={clearToday}
-                  className="text-xs text-red-400 hover:text-red-300"
-                >
-                  Clear
-                </button>
-              </div>
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {todayLog.slice().reverse().map(entry => (
-                  <div key={entry.id} className="flex justify-between items-center text-xs">
-                    <span className="text-neutral-400">
-                      {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-neutral-300">
-                        {isImperial ? Math.round(mlToOz(entry.amount)) : entry.amount} {isImperial ? 'oz' : 'ml'}
-                      </span>
-                      <button
-                        onClick={() => removeEntry(entry.id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-neutral-500 text-sm">Enter your weight to set goal</p>
-      )}
+    <div className="hydration-layout">
+      <section className="hydration-overview">
+        <p className="eyebrow">Today</p><div className="hydration-numbers"><div><strong>{display(intake)}</strong><span>consumed</span></div><div><strong>{display(goal)}</strong><span>daily goal</span></div></div>
+        <div className="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress)}><span style={{ width: `${progress}%` }}/></div>
+        <p className="progress-label">{Math.round(progress)}% complete</p>
+        <div className="quick-add"><button onClick={() => add(250)}>+ {display(250)}</button><button onClick={() => add(500)}>+ {display(500)}</button><button onClick={() => add(750)}>+ {display(750)}</button></div>
+      </section>
+      <section className="hydration-history">
+        <div className="profile-list-heading"><h2>Today’s log</h2>{todayLog.length > 0 && <button onClick={clear}>Clear</button>}</div>
+        {todayLog.length === 0 ? <p className="muted">No entries yet.</p> : <div className="history-list">{todayLog.slice().reverse().map(entry => <div key={entry.id}><time>{new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time><strong>{display(entry.amount)}</strong><button onClick={() => remove(entry.id)} aria-label="Remove entry">×</button></div>)}</div>}
+      </section>
     </div>
   )
 }

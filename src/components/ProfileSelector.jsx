@@ -1,134 +1,65 @@
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { getProfiles, getActiveProfile, setActiveProfile, clearActiveProfile, deleteProfile, saveProfile } from '../utils/storage'
 
 function ProfileSelector({ formData, setFormData }) {
-  const [profiles, setProfiles] = useState([])
-  const [activeProfile, setActiveProfileState] = useState(null)
-  const [showDropdown, setShowDropdown] = useState(false)
+  const [profiles, setProfiles] = useState(() => getProfiles())
+  const [activeProfile, setActiveProfileState] = useState(() => getActiveProfile())
   const [profileName, setProfileName] = useState('')
 
-  useEffect(() => {
-    loadProfiles()
-  }, [])
-
-  const loadProfiles = () => {
-    const allProfiles = getProfiles()
-    const active = getActiveProfile()
-    setProfiles(allProfiles)
-    setActiveProfileState(active)
-
-    if (active) {
-      setFormData(prev => ({ ...prev, ...active }))
-    }
+  const refresh = () => {
+    setProfiles(getProfiles())
+    setActiveProfileState(getActiveProfile())
   }
 
-  const handleSaveProfile = () => {
+  const save = () => {
     if (!profileName.trim()) return
-
-    const profileData = {
-      ...formData,
-      name: profileName.trim()
+    const ok = saveProfile({ ...formData, name: profileName.trim() })
+    if (ok) {
+      setProfileName('')
+      refresh()
     }
-
-    saveProfile(profileData)
-    setProfileName('')
-    loadProfiles()
   }
 
-  const handleLoadProfile = (profile) => {
+  const load = profile => {
     setActiveProfile(profile.id)
     setActiveProfileState(profile)
-    setFormData(prev => ({ ...prev, ...profile }))
-    setShowDropdown(false)
+    setFormData(previous => ({ ...previous, ...profile }))
   }
 
-  const handleDeleteProfile = (e, profileId) => {
-    e.stopPropagation()
-    deleteProfile(profileId)
-    loadProfiles()
+  const remove = (event, id) => {
+    event.stopPropagation()
+    deleteProfile(id)
+    refresh()
   }
 
-  const handleClearProfile = () => {
+  const clear = () => {
     clearActiveProfile()
     setActiveProfileState(null)
     setFormData({
-      age: '',
-      gender: 'male',
-      weight: '',
-      height: '',
-      activityLevel: 'sedentary',
-      workoutToday: false,
-      unitSystem: 'metric',
-      restingHeartRate: '',
-      targetWeight: '',
-      goalTimeline: ''
+      age: '', gender: 'male', weight: '', height: '', heightFeet: '', heightInches: '',
+      activityLevel: 'sedentary', workoutToday: false, unitSystem: 'metric',
+      restingHeartRate: '', targetWeight: '', goalTimeline: '',
     })
   }
 
   return (
-    <div className="flex items-center gap-4 mb-6">
-      <div className="relative">
-        <button
-          onClick={() => setShowDropdown(!showDropdown)}
-          className="px-4 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-400 hover:text-neutral-100 hover:border-neutral-600 transition-all flex items-center gap-2"
-        >
-          {activeProfile ? activeProfile.name : 'Select Profile'}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {showDropdown && (
-          <div className="absolute top-full left-0 mt-2 w-64 bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl z-10">
-            <div className="p-3 border-b border-neutral-700">
-              <input
-                type="text"
-                value={profileName}
-                onChange={(e) => setProfileName(e.target.value)}
-                placeholder="Profile name..."
-                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm text-neutral-100 placeholder-neutral-500"
-              />
-              <button
-                onClick={handleSaveProfile}
-                className="w-full mt-2 px-3 py-2 bg-neutral-700 text-sm text-neutral-100 rounded hover:bg-neutral-600 transition-all"
-              >
-                Save Current as Profile
-              </button>
-            </div>
-
-            <div className="max-h-48 overflow-y-auto">
-              {profiles.length === 0 ? (
-                <p className="p-3 text-sm text-neutral-500 text-center">No saved profiles</p>
-              ) : (
-                profiles.map(profile => (
-                  <div
-                    key={profile.id}
-                    onClick={() => handleLoadProfile(profile)}
-                    className="flex justify-between items-center px-3 py-2 hover:bg-neutral-800 cursor-pointer group"
-                  >
-                    <span className="text-sm text-neutral-300">{profile.name}</span>
-                    <button
-                      onClick={(e) => handleDeleteProfile(e, profile.id)}
-                      className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {activeProfile && (
-        <button
-          onClick={handleClearProfile}
-          className="px-3 py-2 text-sm text-neutral-500 hover:text-neutral-300 transition-all"
-        >
-          Clear Profile
-        </button>
-      )}
+    <div className="profiles-layout">
+      <section className="profile-create">
+        <h2>Save current information</h2>
+        <p>Create a profile for the values entered across the calculators.</p>
+        <label>Profile name<input value={profileName} onChange={event => setProfileName(event.target.value)} placeholder="e.g. Everyday profile"/></label>
+        <button className="primary-button" onClick={save} disabled={!profileName.trim()}>Save profile</button>
+      </section>
+      <section className="profile-list">
+        <div className="profile-list-heading"><h2>Saved profiles</h2>{activeProfile && <button onClick={clear}>Clear active</button>}</div>
+        {profiles.length === 0 ? <div className="empty-state"><h2>No saved profiles</h2><p>Save the current values to create your first profile.</p></div> :
+          profiles.map(profile => (
+            <button className={`profile-row ${activeProfile?.id === profile.id ? 'active' : ''}`} key={profile.id} onClick={() => load(profile)}>
+              <span><strong>{profile.name}</strong><small>{profile.age ? `${profile.age} years` : 'No age saved'} · {profile.unitSystem === 'imperial' ? 'Imperial' : 'Metric'}</small></span>
+              <span role="button" tabIndex={0} className="delete-profile" onClick={event => remove(event, profile.id)} aria-label={`Delete ${profile.name}`}>×</span>
+            </button>
+          ))}
+      </section>
     </div>
   )
 }
