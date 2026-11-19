@@ -3,9 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark">
-    <title>Health Metrics Dashboard</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+      <meta name="theme-color" content="#F7F7F5" />
+      <meta name="color-scheme" content="light dark" />
+      <meta name="description" content="Personal health estimates for metabolism, body measurements, nutrition, fitness, and hydration." />
+      <title>Health — Personal calculators</title>
+      <script>
+        try {
+          const saved = localStorage.getItem('health-site-theme');
+          const theme = saved === 'light' || saved === 'dark'
+            ? saved
+            : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#121318' : '#F7F7F5');
+        } catch (_) {}
+      </script>
   </head>
   <body>
     <div id="root"></div>

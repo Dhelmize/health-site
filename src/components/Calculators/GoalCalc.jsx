@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { kgToLbs, lbsToKg } from '../../utils/conversion'
 
 function GoalCalc({ formData }) {
+  const [today] = useState(() => new Date())
   const calculateGoal = () => {
     const { weight, targetWeight, goalTimeline, unitSystem } = formData
 
@@ -47,7 +48,7 @@ function GoalCalc({ formData }) {
     const tdee = Math.round(bmr * activityMultipliers[activityLevel])
     const targetDailyCalories = tdee + dailyCalorieChange
 
-    const goalDate = new Date()
+    const goalDate = new Date(today)
     goalDate.setDate(goalDate.getDate() + (weeks * 7))
 
     return {

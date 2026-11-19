@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+:root {
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --bg: #F7F7F5;
+  --surface: #FFFFFF;
+  --surface-soft: #F1F1EE;
+  --elevated: #FFFFFF;
+  --text: #171820;
+  --muted: #727480;
+  --border: #E5E5E8;
+  --accent: #444BE2;
+  --accent-soft: #E7E7FF;
+  --accent-text: #FFFFFF;
+  --success: #277A58;
+  --warning: #A86720;
+  --danger: #B84747;
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] {
+  --bg: #121318;
+  --surface: #1D1E25;
+  --surface-soft: #17181E;
+  --elevated: #262831;
+  --text: #F2F2F5;
+  --muted: #B2B2BF;
+  --border: #343640;
+  --accent: #A3A7FF;
+  --accent-soft: #292B52;
+  --accent-text: #15162A;
+  --success: #70C79D;
+  --warning: #E1AC72;
+  --danger: #F08A8A;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--bg); }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--bg); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
